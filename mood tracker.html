@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Field Notes">
+<meta name="theme-color" content="#EAE7DC">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%23EAE7DC'/><text x='50%25' y='58%25' text-anchor='middle' font-family='Georgia,serif' font-size='96' font-weight='500' fill='%2324302B'>fn</text></svg>">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%23EAE7DC'/><text x='50%25' y='58%25' text-anchor='middle' font-family='Georgia,serif' font-size='96' font-weight='500' fill='%2324302B'>fn</text></svg>">
+<title>Field Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --paper: #EAE7DC; --paper-deep: #E1DDCE; --ink: #24302B; --ink-soft: #5C6660;
+    --moss: #4F7358; --plum: #6C6089; --amber: #AD7F3A; --rose: #9B5B5B;
+    --sky: #5B7A8B; --sand: #8C7A5B; --line: #D3CDBC;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  :focus-visible { outline: 2px solid var(--moss); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+  button { font-family: inherit; }
+
+  .app-header {
+    position: sticky; top: 0; z-index: 5; background: var(--paper);
+    padding: 20px 20px 12px; border-bottom: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .brand-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: var(--moss); }
+  .brand-title { font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px; margin: 4px 0 0; line-height: 1.25; }
+  .tabs { display: flex; gap: 6px; background: var(--paper-deep); padding: 4px; border-radius: 999px; width: fit-content; }
+  .tab { border: none; background: transparent; padding: 7px 16px; border-radius: 999px; font-size: 13px; font-weight: 500;
+    color: var(--ink-soft); cursor: pointer; transition: background .15s, color .15s; }
+  .tab.active { background: var(--ink); color: var(--paper); }
+  .tab-icon { padding: 7px 10px; display: flex; align-items: center; }
+
+  .page { max-width: 640px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .hidden { display: none !important; }
+
+  .banner { background: var(--paper-deep); border-left: 3px solid var(--amber); padding: 10px 14px; border-radius: 6px; font-size: 13px; color: var(--ink-soft); }
+  .empty-state, .empty-inline { text-align: center; color: var(--ink-soft); font-style: italic; padding: 24px 12px; font-size: 14px; }
+  .empty-inline { padding: 8px 0; text-align: left; }
+
+  .entry-meta { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+  .meta-stat { text-align: right; display: flex; flex-direction: column; }
+  .meta-mono { font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.06em; color: var(--ink); }
+  .meta-sub { font-size: 12px; color: var(--ink-soft); }
+
+  .card { background: rgba(255,255,255,0.35); border: 1px solid var(--line); border-radius: 10px; padding: 18px;
+    display: flex; flex-direction: column; gap: 14px; }
+  .card-title { font-family: 'Fraunces', serif; font-weight: 500; font-size: 16px; margin: 0; }
+  .card-title-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .card-sub { font-size: 12.5px; color: var(--ink-soft); margin: -8px 0 0; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .field-label { font-size: 12.5px; font-weight: 500; color: var(--ink-soft); }
+  .field-value { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; }
+  .field-ends { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-soft); }
+
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px;
+    background: var(--line); outline: none; margin: 8px 0; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--thumb, var(--ink)); border: 2px solid var(--paper); cursor: pointer; box-shadow: 0 0 0 1px var(--line); }
+  input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%;
+    background: var(--thumb, var(--ink)); border: 2px solid var(--paper); cursor: pointer; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+  .grid-2-charts { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 640px) { .grid-2-charts { grid-template-columns: 1fr 1fr; } }
+
+  .num-field { display: flex; flex-direction: column; gap: 5px; }
+  .num-wrap { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); overflow: hidden; }
+  .num-input { border: none; background: transparent; padding: 10px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 14px;
+    width: 100%; color: var(--ink); outline: none; }
+  .num-unit { padding-right: 10px; font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
+  .date-input { border: 1px solid var(--line); border-radius: 7px; padding: 10px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; background: var(--paper); color: var(--ink); }
+  .date-input.small, .num-input.small { padding: 8px; font-size: 12.5px; }
+  .textarea { border: 1px solid var(--line); border-radius: 7px; padding: 10px 11px; font-family: 'Inter', sans-serif;
+    font-size: 13.5px; background: var(--paper); color: var(--ink); resize: vertical; outline: none; width: 100%; }
+  .textarea:focus, .num-input:focus, .date-input:focus { border-color: var(--moss); }
+
+  .save-btn { background: var(--ink); color: var(--paper); border: none; border-radius: 999px; padding: 14px 20px;
+    font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    gap: 6px; transition: opacity .15s, background .15s; }
+  .save-btn:disabled { opacity: 0.6; }
+  .save-btn.saved { background: var(--moss); }
+  .save-btn.error { background: var(--rose); }
+
+  .trends-meta { font-size: 12.5px; color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; }
+  .chart-box { position: relative; height: 260px; margin: 0 -4px; }
+  .chart-box.small { height: 200px; }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 5px 11px; font-size: 11.5px;
+    color: var(--ink-soft); cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+  .chip.on { background: var(--chip-color); border-color: var(--chip-color); color: var(--paper); }
+
+  .week-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 480px) { .week-grid { grid-template-columns: repeat(3, 1fr); } }
+  .week-card { background: var(--paper-deep); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+  .week-label { font-size: 11px; color: var(--ink-soft); }
+  .week-value { font-family: 'IBM Plex Mono', monospace; font-size: 18px; }
+  .week-delta { font-size: 10.5px; }
+  .week-delta.good { color: var(--moss); }
+  .week-delta.watch { color: var(--rose); }
+
+  .dose-list { display: flex; flex-direction: column; gap: 6px; }
+  .dose-row { display: flex; align-items: center; gap: 8px; background: var(--paper-deep); border-radius: 7px; padding: 10px; font-size: 13px; }
+  .dose-pill-icon { color: var(--rose); font-size: 14px; }
+  .dose-date { flex: 1; }
+  .dose-mg { font-family: 'IBM Plex Mono', monospace; color: var(--ink-soft); }
+  .icon-btn { border: none; background: transparent; cursor: pointer; color: var(--ink-soft); padding: 6px; font-size: 14px; }
+  .icon-btn:hover { color: var(--rose); }
+
+  .dose-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .dose-add .date-input { flex: 1; min-width: 130px; }
+  .dose-add .num-wrap { flex: 0 0 90px; }
+  .add-btn { border: none; background: var(--moss); color: var(--paper); border-radius: 7px; padding: 9px 14px;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+  .danger-btn { border: 1px solid var(--rose); background: transparent; color: var(--rose); border-radius: 7px;
+    padding: 10px 14px; font-size: 13px; cursor: pointer; width: fit-content; }
+  .cancel-btn { border: 1px solid var(--line); background: transparent; color: var(--ink-soft); border-radius: 7px;
+    padding: 10px 14px; font-size: 13px; cursor: pointer; }
+  .confirm-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+
+  .privacy-note { font-size: 12px; color: var(--ink-soft); line-height: 1.5; padding: 0 4px; }
+  .export-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .secondary-btn { border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 7px;
+    padding: 10px 14px; font-size: 13px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div>
+    <div class="brand-eyebrow">FIELD NOTES</div>
+    <h1 class="brand-title">A quiet log for a slow season</h1>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="trends">Trends</button>
+    <button class="tab tab-icon" data-tab="settings" aria-label="Settings">⚙</button>
+  </nav>
+</header>
+
+<!-- TODAY -->
+<main class="page" id="page-today">
+  <div class="entry-meta">
+    <div>
+      <div class="field-label">Date</div>
+      <input type="date" id="entry-date" class="date-input">
+    </div>
+    <div class="meta-stat">
+      <span class="meta-mono" id="day-count">DAY —</span>
+      <span class="meta-sub" id="dose-current">no dose logged</span>
+    </div>
+  </div>
+
+  <div class="banner hidden" id="start-banner">Set your Prozac start date in Settings to see day counts and dose markers on your trends.</div>
+
+  <section class="card">
+    <h2 class="card-title" style="color: var(--moss)">Mind</h2>
+    <div class="field">
+      <div class="field-head"><span class="field-label">Mood</span><span class="field-value" id="v-mood">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="mood" style="--thumb: var(--moss)">
+      <div class="field-ends"><span>rough day</span><span>great day</span></div>
+    </div>
+    <div class="field">
+      <div class="field-head"><span class="field-label">Rumination</span><span class="field-value" id="v-rumination">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="rumination" style="--thumb: var(--plum)">
+      <div class="field-ends"><span>quiet mind</span><span>stuck in loops</span></div>
+    </div>
+    <div class="field">
+      <div class="field-head"><span class="field-label">Checking behaviors</span><span class="field-value" id="v-checking">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="checking" style="--thumb: var(--amber)">
+      <div class="field-ends"><span>let it go</span><span>couldn't stop</span></div>
+    </div>
+    <div class="field">
+      <div class="field-head"><span class="field-label">Irritability</span><span class="field-value" id="v-irritability">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="irritability" style="--thumb: var(--rose)">
+      <div class="field-ends"><span>even keel</span><span>on edge</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title" style="color: var(--sky)">Body</h2>
+    <div class="grid-2">
+      <div class="num-field">
+        <label class="field-label" for="sleepScore">Sleep score</label>
+        <div class="num-wrap"><input type="number" inputmode="numeric" min="0" max="100" id="sleepScore" class="num-input" placeholder="0–100"><span class="num-unit">/100</span></div>
+      </div>
+      <div class="num-field">
+        <label class="field-label" for="rhr">Resting heart rate</label>
+        <div class="num-wrap"><input type="number" inputmode="numeric" id="rhr" class="num-input" placeholder="—"><span class="num-unit">bpm</span></div>
+      </div>
+      <div class="num-field">
+        <label class="field-label" for="hrv">HRV</label>
+        <div class="num-wrap"><input type="number" inputmode="numeric" id="hrv" class="num-input" placeholder="—"><span class="num-unit">ms</span></div>
+      </div>
+      <div class="num-field">
+        <label class="field-label" for="weight">Weight (optional)</label>
+        <div class="num-wrap"><input type="number" inputmode="decimal" id="weight" class="num-input" placeholder="—"><span class="num-unit">lb</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-head"><span class="field-label">Energy</span><span class="field-value" id="v-energy">3</span></div>
+      <input type="range" min="1" max="5" value="3" id="energy" style="--thumb: var(--sky)">
+      <div class="field-ends"><span>drained</span><span>energized</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title" style="color: var(--amber)">Side effects</h2>
+    <div class="field">
+      <div class="field-head"><span class="field-label">Severity</span><span class="field-value" id="v-sideEffectSeverity">0</span></div>
+      <input type="range" min="0" max="10" value="0" id="sideEffectSeverity" style="--thumb: var(--amber)">
+      <div class="field-ends"><span>none</span><span>severe</span></div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="sideEffectNotes">What are you noticing?</label>
+      <textarea class="textarea" rows="2" id="sideEffectNotes" placeholder="e.g. mild nausea in the morning, a little jittery"></textarea>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="field">
+      <label class="field-label" for="notes">Notes</label>
+      <textarea class="textarea" rows="3" id="notes" placeholder="Anything else worth remembering about today"></textarea>
+    </div>
+  </section>
+
+  <button class="save-btn" id="save-btn">Save entry</button>
+</main>
+
+<!-- TRENDS -->
+<main class="page hidden" id="page-trends">
+  <div class="trends-meta" id="trends-meta">Start date not set · 0 entries logged</div>
+  <div id="trends-empty" class="empty-state">Nothing charted yet — log a few daily entries and your trends will show up here.</div>
+
+  <div id="trends-content" class="hidden" style="display: flex; flex-direction: column; gap: 16px;">
+    <section class="card">
+      <h2 class="card-title">Overall trajectory</h2>
+      <p class="card-sub">Mood combined with rumination, checking and irritability — higher is steadier.</p>
+      <div class="chart-box"><canvas id="chart-trajectory"></canvas></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title-row">
+        <h2 class="card-title">Mind metrics</h2>
+        <div class="chips" id="mind-chips">
+          <button class="chip on" data-metric="mood" style="--chip-color: var(--moss)">Mood</button>
+          <button class="chip on" data-metric="rumination" style="--chip-color: var(--plum)">Rumination</button>
+          <button class="chip on" data-metric="checking" style="--chip-color: var(--amber)">Checking</button>
+          <button class="chip on" data-metric="irritability" style="--chip-color: var(--rose)">Irritability</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="chart-mind"></canvas></div>
+    </section>
+
+    <div class="grid-2-charts">
+      <section class="card">
+        <h2 class="card-title" style="color: var(--sky)">Sleep score</h2>
+        <div class="chart-box small"><canvas id="chart-sleep"></canvas></div>
+      </section>
+      <section class="card">
+        <h2 class="card-title" style="color: var(--sand)">RHR & HRV</h2>
+        <div class="chart-box small"><canvas id="chart-vitals"></canvas></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2 class="card-title" style="color: var(--amber)">Side effects</h2>
+      <div class="chart-box small"><canvas id="chart-sides"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">This week vs last week</h2>
+      <div class="week-grid" id="week-grid"></div>
+    </section>
+  </div>
+</main>
+
+<!-- SETTINGS -->
+<main class="page hidden" id="page-settings">
+  <section class="card">
+    <h2 class="card-title">Prozac start date</h2>
+    <p class="card-sub">Used to calculate day counts and line up dose changes on your trends.</p>
+    <input type="date" id="start-date" class="date-input">
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">Dose changes</h2>
+    <p class="card-sub">Log the date of any dose change — these show up as markers on your trajectory chart.</p>
+    <div class="dose-list" id="dose-list"></div>
+    <div class="dose-add">
+      <input type="date" id="new-dose-date" class="date-input small">
+      <div class="num-wrap"><input type="number" inputmode="numeric" id="new-dose-mg" class="num-input small" placeholder="mg"></div>
+      <button class="add-btn" id="add-dose-btn">+ Add</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">Your data</h2>
+    <p class="card-sub">Everything you log stays in this app's local storage on this device. Export a backup any time.</p>
+    <div class="export-row">
+      <button class="secondary-btn" id="export-btn">Export JSON backup</button>
+      <label class="secondary-btn" style="cursor: pointer">
+        Import JSON<input type="file" id="import-input" accept="application/json" style="display: none">
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title" style="color: var(--rose)">Clear all data</h2>
+    <p class="card-sub">Removes every entry and setting. This can't be undone.</p>
+    <div id="clear-idle"><button class="danger-btn" id="clear-btn">Clear all data</button></div>
+    <div id="clear-confirm" class="hidden confirm-row">
+      <span>Delete everything?</span>
+      <button class="danger-btn" id="clear-yes">Yes, delete</button>
+      <button class="cancel-btn" id="clear-no">Cancel</button>
+    </div>
+  </section>
+
+  <p class="privacy-note">
+    Entries are stored privately in this browser's local storage on this device — not sent anywhere. This is a personal log, not a medical record: bring what you see here to your prescriber rather than treating it as the final word.
+  </p>
+</main>
+
+<script>
+// ---------- palette ----------
+const C = { paper: '#EAE7DC', ink: '#24302B', inkSoft: '#5C6660',
+  moss: '#4F7358', plum: '#6C6089', amber: '#AD7F3A', rose: '#9B5B5B',
+  sky: '#5B7A8B', sand: '#8C7A5B', line: '#D3CDBC' };
+
+// ---------- storage ----------
+const KEY_ENTRIES = 'fn.entries.v1';
+const KEY_SETTINGS = 'fn.settings.v1';
+function loadEntries() { try { return JSON.parse(localStorage.getItem(KEY_ENTRIES)) || {}; } catch { return {}; } }
+function loadSettings() { try { return JSON.parse(localStorage.getItem(KEY_SETTINGS)) || { startDate: '', doseChanges: [] }; } catch { return { startDate: '', doseChanges: [] }; } }
+function saveEntries(e) { localStorage.setItem(KEY_ENTRIES, JSON.stringify(e)); }
+function saveSettings(s) { localStorage.setItem(KEY_SETTINGS, JSON.stringify(s)); }
+
+let entries = loadEntries();
+let settings = loadSettings();
+let mindToggles = { mood: true, rumination: true, checking: true, irritability: true };
+const charts = {};
+
+// ---------- date helpers ----------
+function todayLocal() { return formatDateLocal(new Date()); }
+function formatDateLocal(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function parseDateLocal(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function formatDisplay(s) { if(!s) return ''; return parseDateLocal(s).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}); }
+function dayNumber(start, s) { if(!start||!s) return null; return Math.round((parseDateLocal(s)-parseDateLocal(start))/86400000)+1; }
+function currentDose(changes, s) {
+  const a = (changes||[]).filter(d=>d.date<=s).sort((x,y)=>x.date<y.date?1:-1);
+  return a.length ? a[0].dose : null;
+}
+function avg(arr, k) {
+  const v = arr.map(x=>x[k]).filter(x=>x!==null && x!==undefined && x!=='' && !isNaN(x)).map(Number);
+  return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
+}
+function trajectory(e) {
+  if(!e) return null;
+  const v = [e.mood, 11-e.rumination, 11-e.checking, 11-e.irritability].filter(x=>x!=null && !isNaN(x));
+  return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
+}
+
+// ---------- form <-> state ----------
+const emptyEntry = { mood:5, rumination:5, checking:5, irritability:5, sleepScore:'', energy:3,
+  rhr:'', hrv:'', weight:'', sideEffectSeverity:0, sideEffectNotes:'', notes:'' };
+
+const sliderIds = ['mood','rumination','checking','irritability','energy','sideEffectSeverity'];
+const numIds = ['sleepScore','rhr','hrv','weight'];
+const textIds = ['sideEffectNotes','notes'];
+
+function loadFormForDate(date) {
+  const e = entries[date] || emptyEntry;
+  sliderIds.forEach(id => { document.getElementById(id).value = e[id]; document.getElementById('v-'+id).textContent = e[id]; });
+  numIds.forEach(id => { document.getElementById(id).value = e[id] ?? ''; });
+  textIds.forEach(id => { document.getElementById(id).value = e[id] || ''; });
+  updateMeta(date);
+}
+
+function readForm() {
+  const out = {};
+  sliderIds.forEach(id => out[id] = Number(document.getElementById(id).value));
+  numIds.forEach(id => { const v = document.getElementById(id).value; out[id] = v === '' ? null : Number(v); });
+  textIds.forEach(id => out[id] = document.getElementById(id).value);
+  return out;
+}
+
+function updateMeta(date) {
+  const d = dayNumber(settings.startDate, date);
+  document.getElementById('day-count').textContent = d != null ? `DAY ${String(d).padStart(3,'0')}` : 'DAY —';
+  const dose = currentDose(settings.doseChanges, date);
+  document.getElementById('dose-current').textContent = dose != null ? `${dose} mg` : 'no dose logged';
+  document.getElementById('start-banner').classList.toggle('hidden', !!settings.startDate);
+  const btn = document.getElementById('save-btn');
+  if (btn.classList.contains('saved') || btn.classList.contains('error')) return;
+  btn.textContent = `Save entry for ${formatDisplay(date)}`;
+}
+
+// ---------- tabs ----------
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  const tab = t.dataset.tab;
+  ['today','trends','settings'].forEach(name => {
+    document.getElementById('page-'+name).classList.toggle('hidden', name !== tab);
+  });
+  if (tab === 'trends') renderTrends();
+  if (tab === 'settings') renderSettings();
+  window.scrollTo(0, 0);
+}));
+
+// ---------- today: wire inputs ----------
+sliderIds.forEach(id => {
+  document.getElementById(id).addEventListener('input', (e) => {
+    document.getElementById('v-'+id).textContent = e.target.value;
+  });
+});
+
+document.getElementById('entry-date').addEventListener('change', (e) => {
+  loadFormForDate(e.target.value);
+});
+
+document.getElementById('save-btn').addEventListener('click', () => {
+  const date = document.getElementById('entry-date').value;
+  if (!date) return;
+  entries[date] = readForm();
+  try {
+    saveEntries(entries);
+    const btn = document.getElementById('save-btn');
+    btn.classList.add('saved'); btn.textContent = '✓ Saved';
+    setTimeout(() => { btn.classList.remove('saved'); updateMeta(date); }, 1600);
+  } catch (err) {
+    const btn = document.getElementById('save-btn');
+    btn.classList.add('error'); btn.textContent = "Couldn't save — try again";
+    setTimeout(() => { btn.classList.remove('error'); updateMeta(date); }, 2000);
+  }
+});
+
+// ---------- settings ----------
+function renderSettings() {
+  document.getElementById('start-date').value = settings.startDate || '';
+  const list = document.getElementById('dose-list');
+  list.innerHTML = '';
+  if (!(settings.doseChanges || []).length) {
+    list.innerHTML = '<div class="empty-inline">No dose changes logged yet.</div>';
+  } else {
+    settings.doseChanges.forEach((dc, i) => {
+      const row = document.createElement('div');
+      row.className = 'dose-row';
+      row.innerHTML = `<span class="dose-pill-icon">◐</span><span class="dose-date">${formatDisplay(dc.date)}</span><span class="dose-mg">${dc.dose} mg</span><button class="icon-btn" data-i="${i}" aria-label="Remove">✕</button>`;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.icon-btn').forEach(b => b.addEventListener('click', () => {
+      settings.doseChanges.splice(Number(b.dataset.i), 1);
+      saveSettings(settings); renderSettings();
+    }));
+  }
+  document.getElementById('new-dose-date').value = todayLocal();
+}
+
+document.getElementById('start-date').addEventListener('change', (e) => {
+  settings.startDate = e.target.value; saveSettings(settings);
+  updateMeta(document.getElementById('entry-date').value);
+});
+
+document.getElementById('add-dose-btn').addEventListener('click', () => {
+  const date = document.getElementById('new-dose-date').value;
+  const dose = document.getElementById('new-dose-mg').value;
+  if (!date || dose === '') return;
+  settings.doseChanges = [...(settings.doseChanges || []), { date, dose: Number(dose) }]
+    .sort((a,b) => a.date > b.date ? 1 : -1);
+  saveSettings(settings);
+  document.getElementById('new-dose-mg').value = '';
+  renderSettings();
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  document.getElementById('clear-idle').classList.add('hidden');
+  document.getElementById('clear-confirm').classList.remove('hidden');
+});
+document.getElementById('clear-no').addEventListener('click', () => {
+  document.getElementById('clear-idle').classList.remove('hidden');
+  document.getElementById('clear-confirm').classList.add('hidden');
+});
+document.getElementById('clear-yes').addEventListener('click', () => {
+  entries = {}; settings = { startDate: '', doseChanges: [] };
+  saveEntries(entries); saveSettings(settings);
+  document.getElementById('clear-idle').classList.remove('hidden');
+  document.getElementById('clear-confirm').classList.add('hidden');
+  renderSettings();
+  loadFormForDate(document.getElementById('entry-date').value);
+});
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const data = { exportedAt: new Date().toISOString(), entries, settings };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `field-notes-${todayLocal()}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('import-input').addEventListener('change', (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.entries) entries = data.entries;
+      if (data.settings) settings = data.settings;
+      saveEntries(entries); saveSettings(settings);
+      renderSettings();
+      loadFormForDate(document.getElementById('entry-date').value);
+      alert('Imported successfully.');
+    } catch (err) { alert('Import failed: file is not valid JSON.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// ---------- trends ----------
+function chartRows() {
+  return Object.keys(entries).sort().map(date => {
+    const e = entries[date];
+    return {
+      date, day: dayNumber(settings.startDate, date),
+      mood: e.mood, rumination: e.rumination, checking: e.checking, irritability: e.irritability,
+      trajectory: trajectory(e),
+      sleepScore: e.sleepScore, rhr: e.rhr, hrv: e.hrv, weight: e.weight,
+      sideEffectSeverity: e.sideEffectSeverity, sideEffectNotes: e.sideEffectNotes,
+    };
+  });
+}
+
+function xLabels(rows) {
+  return rows.map(r => settings.startDate && r.day != null ? `D${r.day}` : r.date.slice(5));
+}
+
+function doseAnnotations(rows) {
+  const anns = {};
+  (settings.doseChanges || []).forEach((dc, i) => {
+    const label = settings.startDate && dayNumber(settings.startDate, dc.date) != null ? `D${dayNumber(settings.startDate, dc.date)}` : dc.date.slice(5);
+    anns['dose'+i] = { type: 'line', xMin: label, xMax: label, borderColor: C.rose, borderWidth: 1, borderDash: [4,3],
+      label: { display: true, content: `${dc.dose}mg`, position: 'start', backgroundColor: 'transparent', color: C.rose, font: {size: 10} } };
+  });
+  return anns;
+}
+
+function commonScales(minY, maxY) {
+  return {
+    x: { grid: { color: C.line, drawBorder: false }, ticks: { color: C.inkSoft, font: { size: 10 } } },
+    y: { min: minY, max: maxY, grid: { color: C.line, drawBorder: false }, ticks: { color: C.inkSoft, font: { size: 10 } } }
+  };
+}
+
+function renderTrends() {
+  const rows = chartRows();
+  const meta = settings.startDate
+    ? `Since ${formatDisplay(settings.startDate)} · Day ${dayNumber(settings.startDate, todayLocal())}`
+    : 'Start date not set';
+  document.getElementById('trends-meta').textContent = `${meta} · ${rows.length} ${rows.length === 1 ? 'entry' : 'entries'} logged`;
+
+  document.getElementById('trends-empty').classList.toggle('hidden', rows.length > 0);
+  document.getElementById('trends-content').classList.toggle('hidden', rows.length === 0);
+  if (!rows.length) return;
+
+  Object.values(charts).forEach(c => c && c.destroy());
+  const labels = xLabels(rows);
+
+  // Trajectory
+  charts.trajectory = new Chart(document.getElementById('chart-trajectory'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Trajectory', data: rows.map(r=>r.trajectory),
+      borderColor: C.moss, backgroundColor: C.moss+'33', fill: true, tension: 0.35, spanGaps: true, pointRadius: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: tooltipConfig(rows) },
+      scales: commonScales(1, 10) }
+  });
+
+  // Mind (multi-line, toggleable)
+  const mindDatasets = [
+    { key: 'mood', color: C.moss, label: 'Mood' },
+    { key: 'rumination', color: C.plum, label: 'Rumination' },
+    { key: 'checking', color: C.amber, label: 'Checking' },
+    { key: 'irritability', color: C.rose, label: 'Irritability' },
+  ].filter(m => mindToggles[m.key]).map(m => ({
+    label: m.label, data: rows.map(r => r[m.key]),
+    borderColor: m.color, backgroundColor: m.color, tension: 0.3, spanGaps: true, pointRadius: 0, borderWidth: 2
+  }));
+  charts.mind = new Chart(document.getElementById('chart-mind'), {
+    type: 'line',
+    data: { labels, datasets: mindDatasets },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: tooltipConfig(rows) },
+      scales: commonScales(1, 10) }
+  });
+
+  // Sleep
+  charts.sleep = new Chart(document.getElementById('chart-sleep'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Sleep', data: rows.map(r=>r.sleepScore),
+      borderColor: C.sky, backgroundColor: C.sky, tension: 0.3, spanGaps: true, pointRadius: 0, borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: tooltipConfig(rows) },
+      scales: commonScales(0, 100) }
+  });
+
+  // RHR & HRV
+  charts.vitals = new Chart(document.getElementById('chart-vitals'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'RHR', data: rows.map(r=>r.rhr), borderColor: C.sand, tension: 0.3, spanGaps: true, pointRadius: 0, borderWidth: 2, yAxisID: 'y' },
+      { label: 'HRV', data: rows.map(r=>r.hrv), borderColor: C.plum, borderDash: [4,2], tension: 0.3, spanGaps: true, pointRadius: 0, borderWidth: 2, yAxisID: 'y1' }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { color: C.inkSoft, font: { size: 10 } } }, tooltip: tooltipConfig(rows) },
+      scales: {
+        x: { grid: { color: C.line }, ticks: { color: C.inkSoft, font: { size: 10 } } },
+        y: { position: 'left', grid: { color: C.line }, ticks: { color: C.inkSoft, font: { size: 10 } } },
+        y1: { position: 'right', grid: { display: false }, ticks: { color: C.inkSoft, font: { size: 10 } } }
+      } }
+  });
+
+  // Side effects
+  charts.sides = new Chart(document.getElementById('chart-sides'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Severity', data: rows.map(r=>r.sideEffectSeverity), backgroundColor: C.amber, borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const r = rows[ctx.dataIndex];
+            const lines = [`Severity ${r.sideEffectSeverity ?? 0}/10`];
+            if (r.sideEffectNotes) lines.push(r.sideEffectNotes);
+            return lines;
+          }
+        }
+      } },
+      scales: commonScales(0, 10) }
+  });
+
+  // Weekly summary
+  const last7 = rows.slice(-7), prev7 = rows.slice(-14, -7);
+  const inv = { rumination: true, checking: true, irritability: true };
+  const rowsW = [
+    ['mood','Mood'], ['rumination','Rumination'], ['checking','Checking'],
+    ['irritability','Irritability'], ['sleepScore','Sleep score']
+  ];
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+  rowsW.forEach(([k, label]) => {
+    const cur = avg(last7, k), prev = avg(prev7, k);
+    let deltaHtml = '';
+    if (cur !== null && prev !== null) {
+      const delta = cur - prev;
+      const good = inv[k] ? delta < 0 : delta > 0;
+      const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '—';
+      deltaHtml = `<div class="week-delta ${good ? 'good' : 'watch'}">${arrow} ${Math.abs(delta).toFixed(1)} vs prior week</div>`;
+    }
+    const card = document.createElement('div');
+    card.className = 'week-card';
+    card.innerHTML = `<div class="week-label">${label}</div><div class="week-value">${cur !== null ? cur.toFixed(1) : '—'}</div>${deltaHtml}`;
+    grid.appendChild(card);
+  });
+}
+
+function tooltipConfig(rows) {
+  return {
+    backgroundColor: C.ink, titleColor: C.paper, bodyColor: C.paper,
+    callbacks: {
+      title: (items) => {
+        const r = rows[items[0].dataIndex];
+        return formatDisplay(r.date) + (r.day != null ? ` · Day ${r.day}` : '');
+      }
+    }
+  };
+}
+
+// Mind chips
+document.querySelectorAll('#mind-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const k = chip.dataset.metric;
+    mindToggles[k] = !mindToggles[k];
+    chip.classList.toggle('on', mindToggles[k]);
+    renderTrends();
+  });
+});
+
+// ---------- init ----------
+const today = todayLocal();
+document.getElementById('entry-date').value = today;
+document.getElementById('entry-date').max = today;
+loadFormForDate(today);
+</script>
+</body>
+</html>
