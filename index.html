@@ -6,11 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Prozac Summer">
+<meta name="apple-mobile-web-app-title" content="Field Notes">
 <meta name="theme-color" content="#EAE7DC">
 <link rel="apple-touch-icon" href="icon.png?v=4">
 <link rel="icon" href="icon.png?v=4">
-<title>Prozac Summer</title>
+<title>Field Notes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -105,14 +105,16 @@
     color: var(--ink-soft); cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
   .chip.on { background: var(--chip-color); border-color: var(--chip-color); color: var(--paper); }
 
-  .week-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  @media (min-width: 480px) { .week-grid { grid-template-columns: repeat(3, 1fr); } }
-  .week-card { background: var(--paper-deep); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
-  .week-label { font-size: 11px; color: var(--ink-soft); }
-  .week-value { font-family: 'IBM Plex Mono', monospace; font-size: 18px; }
-  .week-delta { font-size: 10.5px; }
-  .week-delta.good { color: var(--moss); }
-  .week-delta.watch { color: var(--rose); }
+  .summary-list { display: flex; flex-direction: column; gap: 2px; }
+  .summary-row { display: flex; align-items: baseline; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 1.4; }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; align-self: center; }
+  .summary-text { flex: 1; }
+  .summary-metric { font-weight: 600; }
+  .summary-change.good { color: var(--moss); font-weight: 600; }
+  .summary-change.watch { color: var(--rose); font-weight: 600; }
+  .summary-change.steady { color: var(--ink-soft); }
+  .summary-note { font-size: 13px; color: var(--ink-soft); font-style: italic; padding: 6px 0; }
 
   .dose-list { display: flex; flex-direction: column; gap: 6px; }
   .dose-row { display: flex; align-items: center; gap: 8px; background: var(--paper-deep); border-radius: 7px; padding: 10px; font-size: 13px; }
@@ -173,22 +175,22 @@
     <h2 class="card-title" style="color: var(--moss)">Mind</h2>
     <div class="field">
       <div class="field-head"><span class="field-label">Mood</span><span class="field-value" id="v-mood">5</span></div>
-      <input type="range" min="1" max="10" value="5" id="mood" style="--thumb: var(--moss)">
+      <input type="range" min="0" max="10" value="5" id="mood" style="--thumb: var(--moss)">
       <div class="field-ends"><span>rough day</span><span>great day</span></div>
     </div>
     <div class="field">
       <div class="field-head"><span class="field-label">Rumination</span><span class="field-value" id="v-rumination">5</span></div>
-      <input type="range" min="1" max="10" value="5" id="rumination" style="--thumb: var(--plum)">
+      <input type="range" min="0" max="10" value="5" id="rumination" style="--thumb: var(--plum)">
       <div class="field-ends"><span>quiet mind</span><span>stuck in loops</span></div>
     </div>
     <div class="field">
       <div class="field-head"><span class="field-label">Checking behaviors</span><span class="field-value" id="v-checking">5</span></div>
-      <input type="range" min="1" max="10" value="5" id="checking" style="--thumb: var(--amber)">
+      <input type="range" min="0" max="10" value="5" id="checking" style="--thumb: var(--amber)">
       <div class="field-ends"><span>let it go</span><span>couldn't stop</span></div>
     </div>
     <div class="field">
       <div class="field-head"><span class="field-label">Irritability</span><span class="field-value" id="v-irritability">5</span></div>
-      <input type="range" min="1" max="10" value="5" id="irritability" style="--thumb: var(--rose)">
+      <input type="range" min="0" max="10" value="5" id="irritability" style="--thumb: var(--rose)">
       <div class="field-ends"><span>even keel</span><span>on edge</span></div>
     </div>
   </section>
@@ -214,8 +216,8 @@
       </div>
     </div>
     <div class="field">
-      <div class="field-head"><span class="field-label">Energy</span><span class="field-value" id="v-energy">3</span></div>
-      <input type="range" min="1" max="5" value="3" id="energy" style="--thumb: var(--sky)">
+      <div class="field-head"><span class="field-label">Energy</span><span class="field-value" id="v-energy">5</span></div>
+      <input type="range" min="0" max="10" value="5" id="energy" style="--thumb: var(--sky)">
       <div class="field-ends"><span>drained</span><span>energized</span></div>
     </div>
   </section>
@@ -251,33 +253,48 @@
   <div id="trends-content" class="hidden" style="display: flex; flex-direction: column; gap: 16px;">
     <section class="card">
       <h2 class="card-title">Overall trajectory</h2>
-      <p class="card-sub">Mood combined with rumination, checking and irritability — higher is steadier.</p>
+      <p class="card-sub">Mood and energy combined with rumination, checking and irritability — higher is steadier.</p>
       <div class="chart-box"><canvas id="chart-trajectory"></canvas></div>
     </section>
 
     <section class="card">
       <div class="card-title-row">
-        <h2 class="card-title">Mind metrics</h2>
-        <div class="chips" id="mind-chips">
+        <h2 class="card-title" style="color: var(--moss)">Positive metrics</h2>
+        <div class="chips" id="pos-chips">
           <button class="chip on" data-metric="mood" style="--chip-color: var(--moss)">Mood</button>
+          <button class="chip on" data-metric="energy" style="--chip-color: var(--sky)">Energy</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="chart-positive"></canvas></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title-row">
+        <h2 class="card-title" style="color: var(--rose)">Negative metrics</h2>
+        <div class="chips" id="neg-chips">
           <button class="chip on" data-metric="rumination" style="--chip-color: var(--plum)">Rumination</button>
           <button class="chip on" data-metric="checking" style="--chip-color: var(--amber)">Checking</button>
           <button class="chip on" data-metric="irritability" style="--chip-color: var(--rose)">Irritability</button>
         </div>
       </div>
-      <div class="chart-box"><canvas id="chart-mind"></canvas></div>
+      <div class="chart-box"><canvas id="chart-negative"></canvas></div>
     </section>
 
-    <div class="grid-2-charts">
-      <section class="card">
-        <h2 class="card-title" style="color: var(--sky)">Sleep score</h2>
-        <div class="chart-box small"><canvas id="chart-sleep"></canvas></div>
-      </section>
-      <section class="card">
-        <h2 class="card-title" style="color: var(--sand)">RHR & HRV</h2>
-        <div class="chart-box small"><canvas id="chart-vitals"></canvas></div>
-      </section>
-    </div>
+    <section class="card">
+      <h2 class="card-title" style="color: var(--sky)">Sleep score</h2>
+      <div class="chart-box small"><canvas id="chart-sleep"></canvas></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title-row">
+        <h2 class="card-title" style="color: var(--sand)">RHR &amp; HRV</h2>
+        <div class="chips" id="vitals-chips">
+          <button class="chip on" data-metric="rhr" style="--chip-color: var(--sand)">RHR</button>
+          <button class="chip on" data-metric="hrv" style="--chip-color: var(--plum)">HRV</button>
+        </div>
+      </div>
+      <div class="chart-box small"><canvas id="chart-vitals"></canvas></div>
+    </section>
 
     <section class="card">
       <h2 class="card-title" style="color: var(--amber)">Side effects</h2>
@@ -285,8 +302,9 @@
     </section>
 
     <section class="card">
-      <h2 class="card-title">This week vs last week</h2>
-      <div class="week-grid" id="week-grid"></div>
+      <h2 class="card-title">Week over week</h2>
+      <p class="card-sub">Your most recent 7 days compared with the 7 days before.</p>
+      <div class="summary-list" id="summary-list"></div>
     </section>
   </div>
 </main>
@@ -353,7 +371,9 @@ function saveSettings(s) { localStorage.setItem(KEY_SETTINGS, JSON.stringify(s))
 
 let entries = loadEntries();
 let settings = loadSettings();
-let mindToggles = { mood: true, rumination: true, checking: true, irritability: true };
+let posToggles = { mood: true, energy: true };
+let negToggles = { rumination: true, checking: true, irritability: true };
+let vitalsToggles = { rhr: true, hrv: true };
 const charts = {};
 
 // ---------- date helpers ----------
@@ -375,12 +395,12 @@ function avg(arr, k) {
 }
 function trajectory(e) {
   if(!e) return null;
-  const v = [e.mood, 11-e.rumination, 11-e.checking, 11-e.irritability].filter(x=>x!=null && !isNaN(x));
+  const v = [e.mood, e.energy, 10-e.rumination, 10-e.checking, 10-e.irritability].filter(x=>x!=null && !isNaN(x));
   return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
 }
 
 // ---------- form <-> state ----------
-const emptyEntry = { mood:5, rumination:5, checking:5, irritability:5, sleepScore:'', energy:3,
+const emptyEntry = { mood:5, rumination:5, checking:5, irritability:5, sleepScore:'', energy:5,
   rhr:'', hrv:'', weight:'', sideEffectSeverity:0, sideEffectNotes:'', notes:'' };
 
 const sliderIds = ['mood','rumination','checking','irritability','energy','sideEffectSeverity'];
@@ -543,7 +563,7 @@ function chartRows() {
     const e = entries[date];
     return {
       date, day: dayNumber(settings.startDate, date),
-      mood: e.mood, rumination: e.rumination, checking: e.checking, irritability: e.irritability,
+      mood: e.mood, energy: e.energy, rumination: e.rumination, checking: e.checking, irritability: e.irritability,
       trajectory: trajectory(e),
       sleepScore: e.sleepScore, rhr: e.rhr, hrv: e.hrv, weight: e.weight,
       sideEffectSeverity: e.sideEffectSeverity, sideEffectNotes: e.sideEffectNotes,
@@ -551,23 +571,42 @@ function chartRows() {
   });
 }
 
+// Short actual-date label, e.g. "Jul 4"
+function dateLabel(dateStr) {
+  return parseDateLocal(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 function xLabels(rows) {
-  return rows.map(r => settings.startDate && r.day != null ? `D${r.day}` : r.date.slice(5));
+  return rows.map(r => dateLabel(r.date));
 }
 
-function doseAnnotations(rows) {
-  const anns = {};
-  (settings.doseChanges || []).forEach((dc, i) => {
-    const label = settings.startDate && dayNumber(settings.startDate, dc.date) != null ? `D${dayNumber(settings.startDate, dc.date)}` : dc.date.slice(5);
-    anns['dose'+i] = { type: 'line', xMin: label, xMax: label, borderColor: C.rose, borderWidth: 1, borderDash: [4,3],
-      label: { display: true, content: `${dc.dose}mg`, position: 'start', backgroundColor: 'transparent', color: C.rose, font: {size: 10} } };
-  });
-  return anns;
+// Thin x-axis labels so a month of data stays readable; dots still mark every point.
+function xTickCallback(rows) {
+  const n = rows.length;
+  const step = n <= 10 ? 1 : n <= 20 ? 2 : n <= 45 ? 4 : 7;
+  return function(value, index) {
+    if (index === 0 || index === n - 1 || index % step === 0) return this.getLabelForValue(value);
+    return '';
+  };
 }
 
-function commonScales(minY, maxY) {
+// Padded numeric range so lines never touch the top or bottom edge.
+function paddedRange(rows, keys, opts = {}) {
+  const vals = [];
+  rows.forEach(r => keys.forEach(k => { const v = r[k]; if (v !== null && v !== undefined && v !== '' && !isNaN(v)) vals.push(Number(v)); }));
+  if (!vals.length) return { min: undefined, max: undefined };
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const pad = Math.max((hi - lo) * 0.18, opts.minPad || 1);
+  let min = lo - pad, max = hi + pad;
+  if (opts.integer) { min = Math.floor(min); max = Math.ceil(max); }
+  if (opts.floorZero && min < 0) min = 0;
+  return { min, max };
+}
+
+function commonScales(minY, maxY, rows) {
   return {
-    x: { grid: { color: C.line, drawBorder: false }, ticks: { color: C.inkSoft, font: { size: 10 } } },
+    x: { grid: { color: C.line, drawBorder: false },
+      ticks: { color: C.inkSoft, font: { size: 10 }, maxRotation: 0, autoSkip: false, callback: xTickCallback(rows) } },
     y: { min: minY, max: maxY, grid: { color: C.line, drawBorder: false }, ticks: { color: C.inkSoft, font: { size: 10 } } }
   };
 }
@@ -585,68 +624,90 @@ function renderTrends() {
 
   Object.values(charts).forEach(c => c && c.destroy());
   const labels = xLabels(rows);
+  const dotStyle = { pointRadius: 3, pointHoverRadius: 5, pointBorderWidth: 0 };
 
   // Trajectory
   charts.trajectory = new Chart(document.getElementById('chart-trajectory'), {
     type: 'line',
     data: { labels, datasets: [{ label: 'Trajectory', data: rows.map(r=>r.trajectory),
-      borderColor: C.moss, backgroundColor: C.moss+'33', fill: true, tension: 0.35, spanGaps: true, pointRadius: 0 }] },
+      borderColor: C.moss, backgroundColor: C.moss+'33', pointBackgroundColor: C.moss, fill: true, tension: 0.35, spanGaps: true, ...dotStyle }] },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: tooltipConfig(rows) },
-      scales: commonScales(1, 10) }
+      scales: commonScales(0, 10, rows) }
   });
 
-  // Mind (multi-line, toggleable)
-  const mindDatasets = [
+  // Positive metrics: mood + energy
+  const posDatasets = [
     { key: 'mood', color: C.moss, label: 'Mood' },
+    { key: 'energy', color: C.sky, label: 'Energy' },
+  ].filter(m => posToggles[m.key]).map(m => ({
+    label: m.label, data: rows.map(r => r[m.key]),
+    borderColor: m.color, backgroundColor: m.color, pointBackgroundColor: m.color, tension: 0.3, spanGaps: true, borderWidth: 2, ...dotStyle
+  }));
+  charts.positive = new Chart(document.getElementById('chart-positive'), {
+    type: 'line',
+    data: { labels, datasets: posDatasets },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: tooltipConfig(rows) },
+      scales: commonScales(0, 10, rows) }
+  });
+
+  // Negative metrics: rumination + checking + irritability
+  const negDatasets = [
     { key: 'rumination', color: C.plum, label: 'Rumination' },
     { key: 'checking', color: C.amber, label: 'Checking' },
     { key: 'irritability', color: C.rose, label: 'Irritability' },
-  ].filter(m => mindToggles[m.key]).map(m => ({
+  ].filter(m => negToggles[m.key]).map(m => ({
     label: m.label, data: rows.map(r => r[m.key]),
-    borderColor: m.color, backgroundColor: m.color, tension: 0.3, spanGaps: true, pointRadius: 0, borderWidth: 2
+    borderColor: m.color, backgroundColor: m.color, pointBackgroundColor: m.color, tension: 0.3, spanGaps: true, borderWidth: 2, ...dotStyle
   }));
-  charts.mind = new Chart(document.getElementById('chart-mind'), {
+  charts.negative = new Chart(document.getElementById('chart-negative'), {
     type: 'line',
-    data: { labels, datasets: mindDatasets },
+    data: { labels, datasets: negDatasets },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: tooltipConfig(rows) },
-      scales: commonScales(1, 10) }
+      scales: commonScales(0, 10, rows) }
   });
 
   // Sleep
   charts.sleep = new Chart(document.getElementById('chart-sleep'), {
     type: 'line',
     data: { labels, datasets: [{ label: 'Sleep', data: rows.map(r=>r.sleepScore),
-      borderColor: C.sky, backgroundColor: C.sky, tension: 0.3, spanGaps: true, pointRadius: 0, borderWidth: 2 }] },
+      borderColor: C.sky, backgroundColor: C.sky, pointBackgroundColor: C.sky, tension: 0.3, spanGaps: true, borderWidth: 2, ...dotStyle }] },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: tooltipConfig(rows) },
-      scales: commonScales(0, 100) }
+      scales: commonScales(0, 100, rows) }
   });
 
-  // RHR & HRV
+  // RHR & HRV — padded axes, integer HRV ticks, isolation chips
+  const rhrRange = paddedRange(rows, ['rhr'], { integer: true, floorZero: true });
+  const hrvRange = paddedRange(rows, ['hrv'], { integer: true, floorZero: true });
+  const vitalsDatasets = [];
+  if (vitalsToggles.rhr) vitalsDatasets.push({ label: 'RHR', data: rows.map(r=>r.rhr), borderColor: C.sand, pointBackgroundColor: C.sand, tension: 0.3, spanGaps: true, borderWidth: 2, yAxisID: 'y', ...dotStyle });
+  if (vitalsToggles.hrv) vitalsDatasets.push({ label: 'HRV', data: rows.map(r=>r.hrv), borderColor: C.plum, pointBackgroundColor: C.plum, borderDash: [4,2], tension: 0.3, spanGaps: true, borderWidth: 2, yAxisID: 'y1', ...dotStyle });
   charts.vitals = new Chart(document.getElementById('chart-vitals'), {
     type: 'line',
-    data: { labels, datasets: [
-      { label: 'RHR', data: rows.map(r=>r.rhr), borderColor: C.sand, tension: 0.3, spanGaps: true, pointRadius: 0, borderWidth: 2, yAxisID: 'y' },
-      { label: 'HRV', data: rows.map(r=>r.hrv), borderColor: C.plum, borderDash: [4,2], tension: 0.3, spanGaps: true, pointRadius: 0, borderWidth: 2, yAxisID: 'y1' }
-    ]},
+    data: { labels, datasets: vitalsDatasets },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { color: C.inkSoft, font: { size: 10 } } }, tooltip: tooltipConfig(rows) },
+      plugins: { legend: { display: false }, tooltip: tooltipConfig(rows) },
       scales: {
-        x: { grid: { color: C.line }, ticks: { color: C.inkSoft, font: { size: 10 } } },
-        y: { position: 'left', grid: { color: C.line }, ticks: { color: C.inkSoft, font: { size: 10 } } },
-        y1: { position: 'right', grid: { display: false }, ticks: { color: C.inkSoft, font: { size: 10 } } }
+        x: { grid: { color: C.line }, ticks: { color: C.inkSoft, font: { size: 10 }, maxRotation: 0, autoSkip: false, callback: xTickCallback(rows) } },
+        y: { display: vitalsToggles.rhr, position: 'left', min: rhrRange.min, max: rhrRange.max, grid: { color: C.line },
+          ticks: { color: C.inkSoft, font: { size: 10 }, precision: 0 } },
+        y1: { display: vitalsToggles.hrv, position: 'right', min: hrvRange.min, max: hrvRange.max, grid: { display: false },
+          ticks: { color: C.inkSoft, font: { size: 10 }, precision: 0, stepSize: 1, callback: (v) => Number.isInteger(v) ? v : '' } }
       } }
   });
 
-  // Side effects
+  // Side effects — actual dates on the horizontal axis
   charts.sides = new Chart(document.getElementById('chart-sides'), {
     type: 'bar',
     data: { labels, datasets: [{ label: 'Severity', data: rows.map(r=>r.sideEffectSeverity), backgroundColor: C.amber, borderRadius: 3 }] },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: C.ink, titleColor: C.paper, bodyColor: C.paper,
         callbacks: {
+          title: (items) => { const r = rows[items[0].dataIndex]; return formatDisplay(r.date) + (r.day != null ? ` · Day ${r.day}` : ''); },
           label: (ctx) => {
             const r = rows[ctx.dataIndex];
             const lines = [`Severity ${r.sideEffectSeverity ?? 0}/10`];
@@ -655,31 +716,60 @@ function renderTrends() {
           }
         }
       } },
-      scales: commonScales(0, 10) }
+      scales: {
+        x: { grid: { color: C.line, drawBorder: false }, ticks: { color: C.inkSoft, font: { size: 10 }, maxRotation: 0, autoSkip: false, callback: xTickCallback(rows) } },
+        y: { min: 0, max: 10, grid: { color: C.line, drawBorder: false }, ticks: { color: C.inkSoft, font: { size: 10 } } }
+      } }
   });
 
-  // Weekly summary
+  renderSummary(rows);
+}
+
+// ---------- plain-language week-over-week summary ----------
+function renderSummary(rows) {
+  const list = document.getElementById('summary-list');
+  list.innerHTML = '';
   const last7 = rows.slice(-7), prev7 = rows.slice(-14, -7);
-  const inv = { rumination: true, checking: true, irritability: true };
-  const rowsW = [
-    ['mood','Mood'], ['rumination','Rumination'], ['checking','Checking'],
-    ['irritability','Irritability'], ['sleepScore','Sleep score']
+
+  if (prev7.length === 0) {
+    list.innerHTML = '<div class="summary-note">Once you have about two weeks of entries, this will compare your most recent week with the one before.</div>';
+    return;
+  }
+
+  // metric: [label, color, higherIsBetter]
+  const metrics = [
+    ['mood', 'Mood', C.moss, true],
+    ['energy', 'Energy', C.sky, true],
+    ['rumination', 'Rumination', C.plum, false],
+    ['checking', 'Checking behaviors', C.amber, false],
+    ['irritability', 'Irritability', C.rose, false],
+    ['sleepScore', 'Sleep score', C.sky, true],
   ];
-  const grid = document.getElementById('week-grid');
-  grid.innerHTML = '';
-  rowsW.forEach(([k, label]) => {
-    const cur = avg(last7, k), prev = avg(prev7, k);
-    let deltaHtml = '';
-    if (cur !== null && prev !== null) {
-      const delta = cur - prev;
-      const good = inv[k] ? delta < 0 : delta > 0;
-      const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '—';
-      deltaHtml = `<div class="week-delta ${good ? 'good' : 'watch'}">${arrow} ${Math.abs(delta).toFixed(1)} vs prior week</div>`;
+  const STEADY = 5; // percent — below this reads as "roughly steady"
+
+  metrics.forEach(([key, label, color, higherBetter]) => {
+    const cur = avg(last7, key), prev = avg(prev7, key);
+    const row = document.createElement('div');
+    row.className = 'summary-row';
+    let inner = `<span class="summary-dot" style="background:${color}"></span><span class="summary-text">`;
+
+    if (cur === null || prev === null || prev === 0) {
+      inner += `<span class="summary-metric">${label}</span> — not enough data yet`;
+    } else {
+      const pct = ((cur - prev) / Math.abs(prev)) * 100;
+      const mag = Math.abs(pct);
+      const rising = pct > 0;
+      const dir = rising ? 'up' : 'down';
+      if (mag < STEADY) {
+        inner += `<span class="summary-metric">${label}</span> <span class="summary-change steady">roughly steady</span> vs last week`;
+      } else {
+        const good = higherBetter ? rising : !rising;
+        inner += `<span class="summary-metric">${label}</span> <span class="summary-change ${good ? 'good' : 'watch'}">${dir} ${Math.round(mag)}%</span> from last week`;
+      }
     }
-    const card = document.createElement('div');
-    card.className = 'week-card';
-    card.innerHTML = `<div class="week-label">${label}</div><div class="week-value">${cur !== null ? cur.toFixed(1) : '—'}</div>${deltaHtml}`;
-    grid.appendChild(card);
+    inner += '</span>';
+    row.innerHTML = inner;
+    list.appendChild(row);
   });
 }
 
@@ -695,15 +785,23 @@ function tooltipConfig(rows) {
   };
 }
 
-// Mind chips
-document.querySelectorAll('#mind-chips .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    const k = chip.dataset.metric;
-    mindToggles[k] = !mindToggles[k];
-    chip.classList.toggle('on', mindToggles[k]);
-    renderTrends();
+// Chip isolation handlers for each grouped chart
+function wireChips(containerId, toggleObj) {
+  document.querySelectorAll(`#${containerId} .chip`).forEach(chip => {
+    chip.addEventListener('click', () => {
+      const k = chip.dataset.metric;
+      // Prevent turning off the last remaining metric in a group
+      const activeCount = Object.values(toggleObj).filter(Boolean).length;
+      if (toggleObj[k] && activeCount === 1) return;
+      toggleObj[k] = !toggleObj[k];
+      chip.classList.toggle('on', toggleObj[k]);
+      renderTrends();
+    });
   });
-});
+}
+wireChips('pos-chips', posToggles);
+wireChips('neg-chips', negToggles);
+wireChips('vitals-chips', vitalsToggles);
 
 // ---------- init ----------
 const today = todayLocal();
